@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>윤택경마 적중카드 생성기</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg:#0d1117; --panel:#161c26; --line:#2a3342;
+    --gold:#e6c15c; --text:#eef2f5; --sub:#8b97a5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Pretendard",sans-serif;background:var(--bg);color:var(--text);}
+  .app{display:flex;flex-wrap:wrap;gap:24px;max-width:1200px;margin:0 auto;padding:28px 20px 60px;}
+  h1{width:100%;font-size:22px;font-weight:800;}
+  h1 span{color:var(--gold);}
+  .hint{width:100%;color:var(--sub);font-size:13px;margin-top:-14px;}
+
+  /* ─ 폼 ─ */
+  .form{flex:1;min-width:320px;max-width:440px;display:flex;flex-direction:column;gap:14px;}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .box h3{font-size:13px;font-weight:800;color:var(--sub);letter-spacing:2px;margin-bottom:10px;}
+  label{font-size:12px;color:var(--sub);display:block;margin:8px 0 4px;}
+  input[type=text]{width:100%;background:#0d1420;border:1px solid var(--line);border-radius:8px;
+    color:var(--text);padding:9px 12px;font-size:15px;font-family:inherit;}
+  input[type=text]:focus{outline:none;border-color:var(--gold);}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .row input.small{width:64px;flex-shrink:0;text-align:center;}
+  .row input.mid{width:110px;flex-shrink:0;text-align:center;}
+  .del{background:none;border:1px solid var(--line);color:var(--sub);border-radius:8px;
+    width:32px;height:36px;cursor:pointer;font-size:15px;flex-shrink:0;}
+  .del:hover{color:#ff8f7d;border-color:#ff8f7d;}
+  .add{background:none;border:1px dashed var(--line);color:var(--sub);border-radius:8px;
+    padding:8px;width:100%;cursor:pointer;font-size:13px;font-family:inherit;}
+  .add:hover{color:var(--gold);border-color:var(--gold);}
+  .segs{display:flex;gap:8px;}
+  .segs button{flex:1;padding:10px 4px;border-radius:8px;border:1px solid var(--line);
+    background:#0d1420;color:var(--sub);font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;
+    transition:all .15s ease;}
+  .segs button.on{color:#0d1117;border-color:transparent;}
+  #dFri.on{background:linear-gradient(135deg,#f2d98a,#cfa63e);}
+  #dSat.on{background:linear-gradient(135deg,#8ec5f2,#3d84cf);color:#fff;}
+  #dSun.on{background:linear-gradient(135deg,#f2938a,#cf483d);color:#fff;}
+  #vSeoul.on{background:linear-gradient(135deg,#2ee6b8,#14b898);color:#06281f;}
+  #vBusan.on{background:linear-gradient(135deg,#57b8e8,#2a8bc4);color:#fff;}
+  #vJeju.on{background:linear-gradient(135deg,#ffb066,#e8843d);color:#3a1d05;}
+  #uHit.on,#uPick.on{background:#2c3a4f;color:#fff;border-color:#4a5d78;}
+  .swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .sw{width:34px;height:34px;border-radius:8px;border:2px solid var(--line);cursor:pointer;padding:0;}
+  .sw.on{border-color:var(--gold);box-shadow:0 0 0 2px rgba(230,193,92,.35);}
+  .sw-custom{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);}
+  input[type=color]{width:34px;height:34px;border:2px solid var(--line);border-radius:8px;
+    background:none;cursor:pointer;padding:2px;}
+  .dl{width:100%;padding:15px;border:none;border-radius:10px;font-size:16px;font-weight:800;
+    font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#f2d98a,#cfa63e);color:#2b2108;}
+  .dl:hover{filter:brightness(1.08);}
+
+  /* ─ 미리보기 ─ */
+  .preview{flex:1;min-width:340px;}
+  .preview-inner{overflow:auto;}
+
+  /* ─ 카드 (테마 변수) ─ */
+  .card{
+    --a1:#ffe9ab; --a2:#e6c15c; --a3:#a87f1f;             /* 금: 골드 */
+    --aline:rgba(230,193,92,.3); --aglow:rgba(230,193,92,.16);
+    /* 웹폰트는 이미지 변환 시 누락될 수 있어 시스템 글꼴 고정 (화면=다운로드 동일 보장) */
+    font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',AppleGothic,sans-serif;
+    width:600px;padding:44px 38px 0;position:relative;overflow:hidden;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,.014) 0 1px, transparent 1px 7px),
+      radial-gradient(600px 280px at 50% -70px, var(--aglow), transparent 65%),
+      radial-gradient(500px 300px at 50% 115%, rgba(0,0,0,.5), transparent 70%),
+      linear-gradient(160deg,#131a28 0%,#0a0f18 70%,#0d1322 100%);
+    border:1px solid var(--aline);
+    display:flex;flex-direction:column;align-items:center;}
+  .card.t-sat{--a1:#d3e9ff;--a2:#6cb1ec;--a3:#1f5fa8;
+    --aline:rgba(108,177,236,.35);--aglow:rgba(108,177,236,.15);}
+  .card.t-sun{--a1:#ffd8d0;--a2:#ee6f66;--a3:#a8291f;
+    --aline:rgba(238,111,102,.35);--aglow:rgba(238,111,102,.15);}
+
+  /* 상단 포인트 라인 */
+  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;
+    background:linear-gradient(90deg,transparent 0%,var(--a2) 25%,var(--a1) 50%,var(--a2) 75%,transparent 100%);}
+  /* 안쪽 헤어라인 프레임 */
+  .card .frame{position:absolute;inset:14px;border:1px solid var(--aline);border-radius:6px;pointer-events:none;opacity:.55;}
+  .card .corner{display:none;}
+  /* 기록물 일련번호 각인 */
+  .card .serial{position:absolute;top:26px;right:30px;font-size:10px;font-weight:600;
+    letter-spacing:3px;color:rgba(255,255,255,.28);white-space:nowrap;}
+
+  .card .top{display:flex;align-items:center;gap:14px;}
+  .card .venue{font-size:14px;font-weight:900;letter-spacing:3px;border-radius:4px;padding:5px 14px;white-space:nowrap;}
+  .card .venue.v-seoul{background:#2ee6b8;color:#06281f;}
+  .card .venue.v-busan{background:#57b8e8;color:#082638;}
+  .card .venue.v-jeju{background:#ffb066;color:#3a1d05;}
+  .card .date{font-size:16px;font-weight:300;color:#aebac6;letter-spacing:6px;white-space:nowrap;}
+
+  .card .eyebrow{margin-top:24px;font-size:11px;font-weight:400;letter-spacing:11px;
+    color:var(--a2);opacity:.9;white-space:nowrap;padding-left:11px;}
+  .card .title{margin-top:10px;font-size:56px;font-weight:900;letter-spacing:1px;white-space:nowrap;
+    background:linear-gradient(180deg,var(--a1) 15%,var(--a2) 60%,var(--a3) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 4px 18px var(--aglow));text-align:center;line-height:1.15;}
+  .card .title-line{width:46px;height:2px;background:var(--a2);margin-top:20px;opacity:.9;}
+
+  .card .horses{margin-top:26px;display:flex;gap:10px;}
+  .card .horse{display:flex;align-items:center;gap:9px;padding:10px 16px;
+    background:rgba(255,255,255,.055);border-radius:40px;}
+  .card .hnum{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:900;}
+  .card .hname{font-size:20px;font-weight:800;color:#f2f5f8;white-space:nowrap;letter-spacing:.5px;}
+
+  .card .odds{margin-top:34px;display:flex;align-items:stretch;position:relative;}
+  .card .odds::before{content:"";position:absolute;left:-70px;right:-70px;top:-36px;bottom:-36px;
+    background:radial-gradient(closest-side, var(--aglow), transparent 72%);pointer-events:none;}
+  .card .odd{z-index:1;}
+  .card .odd{display:flex;flex-direction:column;align-items:center;padding:0 34px;position:relative;}
+  .card .odd+.odd::before{content:"";position:absolute;left:0;top:12%;bottom:12%;width:1px;
+    background:rgba(255,255,255,.14);}
+  .card .olabel{font-size:14px;font-weight:300;color:#aebac6;letter-spacing:8px;margin-bottom:12px;
+    padding-left:8px;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:8px;}
+  .card .oval{font-size:72px;font-weight:900;line-height:1;white-space:nowrap;letter-spacing:-1px;
+    background:linear-gradient(180deg,var(--a1) 15%,var(--a2) 60%,var(--a3) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 3px 14px var(--aglow));}
+  .card .oval small{font-size:26px;font-weight:800;}
+
+  .card .comment{margin-top:32px;font-size:18px;font-weight:400;color:#b6c2cd;text-align:center;line-height:1.6;}
+  .card .comment b{color:var(--a2);font-weight:800;}
+
+  /* 도장 스타일 뱃지 */
+  .card .badge{margin-top:26px;display:inline-block;padding:11px 30px 11px 36px;
+    border:3px double var(--a2);border-radius:8px;transform:rotate(-2deg);
+    font-size:25px;font-weight:900;letter-spacing:9px;color:var(--a2);white-space:nowrap;
+    box-shadow:0 0 24px var(--aglow);}
+
+  .card .brand{margin-top:36px;width:calc(100% + 76px);background:rgba(0,0,0,.45);
+    border-top:1px solid var(--aline);padding:14px 38px;display:flex;
+    justify-content:space-between;align-items:center;}
+  .card .bname{font-size:17px;font-weight:900;color:#f2f5f8;white-space:nowrap;letter-spacing:1px;}
+  .card .bname b{color:var(--a2);}
+  .card .bcontact{font-size:13px;font-weight:700;color:#93a2af;letter-spacing:1px;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>윤택경마 <span>적중카드 생성기</span></h1>
+  <p class="hint">요일에 따라 카드 색이 바뀝니다: 금=골드 · 토=블루 · 일=레드. 경마장 뱃지: 서울=민트 · 부산=하늘 · 제주=감귤</p>
+
+  <div class="form">
+    <div class="box">
+      <h3>요일 (카드 색상)</h3>
+      <div class="segs">
+        <button id="dFri" class="on" onclick="setDay('fri')">금 · 골드</button>
+        <button id="dSat" onclick="setDay('sat')">토 · 블루</button>
+        <button id="dSun" onclick="setDay('sun')">일 · 레드</button>
+      </div>
+      <h3 style="margin-top:14px;">경마장 (뱃지)</h3>
+      <div class="segs">
+        <button id="vSeoul" class="on" onclick="setVenue('seoul')">서울</button>
+        <button id="vBusan" onclick="setVenue('busan')">부산</button>
+        <button id="vJeju" onclick="setVenue('jeju')">제주</button>
+      </div>
+      <h3 style="margin-top:14px;">카드 용도</h3>
+      <div class="segs">
+        <button id="uHit" class="on" onclick="setUse('hit')">적중내역</button>
+        <button id="uPick" onclick="setUse('pick')">오늘의 승부</button>
+      </div>
+      <h3 style="margin-top:14px;">배경 색상</h3>
+      <div class="swatches" id="swatches">
+        <button class="sw on" style="background:#0e1524" onclick="setBg('#0e1524',this)" title="네이비 (기본)"></button>
+        <button class="sw" style="background:#0b0b0d" onclick="setBg('#0b0b0d',this)" title="블랙"></button>
+        <button class="sw" style="background:#0c1a14" onclick="setBg('#0c1a14',this)" title="딥그린"></button>
+        <button class="sw" style="background:#1c0e12" onclick="setBg('#1c0e12',this)" title="버건디"></button>
+        <button class="sw" style="background:#141022" onclick="setBg('#141022',this)" title="딥퍼플"></button>
+        <span class="sw-custom">
+          <input type="color" id="bgPicker" value="#0e1524" oninput="setBg(this.value,null)">
+          직접 선택
+        </span>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>기본 정보</h3>
+      <label>날짜·요일</label>
+      <input type="text" id="inDate" value="7/4 (토)" oninput="render()">
+      <label>메인 타이틀 (경주명)</label>
+      <input type="text" id="inTitle" value="제주 3경주" oninput="render()">
+      <label>코멘트 (선택 · 비우면 숨김 · **굵게** 강조)</label>
+      <input type="text" id="inComment" value="9전설마루 대가리 → **W아나짜리** 3연대기까지" oninput="render()">
+      <label>하단 뱃지 문구</label>
+      <input type="text" id="inBadge" value="승 부 적 중" oninput="render()">
+    </div>
+
+    <div class="box">
+      <h3>출전마 (번호 + 마명)</h3>
+      <div id="horseRows"></div>
+      <button class="add" onclick="addHorse()">+ 말 추가</button>
+    </div>
+
+    <div class="box">
+      <h3>배당 (라벨 + 배수)</h3>
+      <div id="oddRows"></div>
+      <button class="add" onclick="addOdd()">+ 배당 추가</button>
+    </div>
+
+    <button class="dl" onclick="download()">PNG 다운로드</button>
+  </div>
+
+  <div class="preview">
+    <div class="preview-inner">
+      <div class="card" id="card">
+        <div class="frame"></div>
+        <div class="serial" id="cSerial">YT ARCHIVE</div>
+        <div class="top">
+          <span class="venue v-seoul" id="cVenue">서울</span>
+          <div class="date" id="cDate"></div>
+        </div>
+        <div class="eyebrow" id="cEyebrow">WINNING RESULT</div>
+        <div class="title" id="cTitle"></div>
+        <div class="title-line"></div>
+        <div class="horses" id="cHorses"></div>
+        <div class="odds" id="cOdds"></div>
+        <div class="comment" id="cComment"></div>
+        <div class="badge" id="cBadge"></div>
+        <div class="brand">
+          <div class="bname"><b>윤택</b>의 경마예상</div>
+          <div class="bcontact">ARS 060.702.0101 · SMS 010.9423.9339</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 마번 안장 색상 (1~16)
+const NUM_COLORS = {
+  1:['#f5f5f5','#111'], 2:['#1c1c1c','#fff'], 3:['#d63b2f','#fff'], 4:['#2456c4','#fff'],
+  5:['#f2c53d','#111'], 6:['#2e9e4f','#fff'], 7:['#e07b28','#fff'], 8:['#e88bb4','#111'],
+  9:['#7b3fc4','#fff'], 10:['#57b8e8','#111'], 11:['#8a9199','#111'], 12:['#5a8f3c','#fff'],
+  13:['#8b5a2b','#fff'], 14:['#b02020','#fff'], 15:['#3a3f8f','#fff'], 16:['#0e6e6e','#fff']
+};
+const VENUE_NAMES={seoul:'서울',busan:'부산',jeju:'제주'};
+let horses=[{n:'9',name:'전설마루'},{n:'8',name:'제우스'},{n:'3',name:'연대기'}];
+let odds=[{l:'쌍',v:'42.1',c:''},{l:'삼쌍',v:'536.4',c:''}];
+const DAY_ACCENT={fri:'#e6c15c',sat:'#6cb1ec',sun:'#ee6f66'};
+let day='fri', venue='seoul', use='hit', bg='#0e1524';
+const GLOWS={fri:'rgba(230,193,92,.16)',sat:'rgba(108,177,236,.15)',sun:'rgba(238,111,102,.15)'};
+
+// hex 밝기 조절
+function shade(hex,p){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.min(255,Math.max(0,Math.round(r+(p>0?(255-r)*p:r*p))));
+  g=Math.min(255,Math.max(0,Math.round(g+(p>0?(255-g)*p:g*p))));
+  b=Math.min(255,Math.max(0,Math.round(b+(p>0?(255-b)*p:b*p))));
+  return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+function setBg(color,btn){
+  bg=color;
+  document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  document.getElementById('bgPicker').value=color;
+  render();
+}
+
+function setDay(d){
+  day=d;
+  ['dFri','dSat','dSun'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById(d==='fri'?'dFri':d==='sat'?'dSat':'dSun').classList.add('on');
+  render();
+}
+function setVenue(v){
+  venue=v;
+  ['vSeoul','vBusan','vJeju'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById(v==='seoul'?'vSeoul':v==='busan'?'vBusan':'vJeju').classList.add('on');
+  render();
+}
+function setUse(u){
+  use=u;
+  document.getElementById('uHit').classList.toggle('on',u==='hit');
+  document.getElementById('uPick').classList.toggle('on',u==='pick');
+  const b=document.getElementById('inBadge');
+  if(u==='pick' && b.value.trim()==='승 부 적 중') b.value='오 늘 의  승 부';
+  if(u==='hit' && b.value.trim()==='오 늘 의  승 부') b.value='승 부 적 중';
+  render();
+}
+function addHorse(){ if(horses.length<4){horses.push({n:'',name:''});buildForm();render();} }
+function addOdd(){ if(odds.length<3){odds.push({l:'',v:''});buildForm();render();} }
+function buildForm(){
+  const hr=document.getElementById('horseRows');
+  hr.innerHTML='';
+  horses.forEach((h,i)=>{
+    const div=document.createElement('div');div.className='row';
+    div.innerHTML=`<input type="text" class="small" placeholder="번호" value="${h.n}"
+        oninput="horses[${i}].n=this.value;render()">
+      <input type="text" placeholder="마명" value="${h.name}"
+        oninput="horses[${i}].name=this.value;render()">
+      <button class="del" onclick="horses.splice(${i},1);buildForm();render()">✕</button>`;
+    hr.appendChild(div);
+  });
+  const or=document.getElementById('oddRows');
+  or.innerHTML='';
+  odds.forEach((o,i)=>{
+    const div=document.createElement('div');div.className='row';
+    div.innerHTML=`<input type="text" class="mid" placeholder="라벨 (쌍/삼쌍/삼복)" value="${o.l}"
+        oninput="odds[${i}].l=this.value;render()">
+      <input type="text" placeholder="배수 (숫자만)" value="${o.v}"
+        oninput="odds[${i}].v=this.value;render()">
+      <input type="color" value="${o.c||DAY_ACCENT[day]}" title="배당 숫자 색상"
+        oninput="odds[${i}].c=this.value;render()">
+      <button class="del" title="테마색으로 되돌리기" onclick="odds[${i}].c='';buildForm();render()">↺</button>
+      <button class="del" onclick="odds.splice(${i},1);buildForm();render()">✕</button>`;
+    or.appendChild(div);
+  });
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function render(){
+  const card=document.getElementById('card');
+  card.className='card'+(day==='sat'?' t-sat':day==='sun'?' t-sun':'');
+  card.style.background=
+    `radial-gradient(600px 280px at 50% -70px, ${GLOWS[day]}, transparent 65%),`+
+    `linear-gradient(160deg, ${shade(bg,.06)} 0%, ${shade(bg,-.35)} 70%, ${bg} 100%)`;
+  const v=document.getElementById('cVenue');
+  v.className='venue v-'+venue;
+  v.textContent=VENUE_NAMES[venue];
+  document.getElementById('cDate').textContent=document.getElementById('inDate').value;
+  document.getElementById('cEyebrow').textContent=(use==='pick')?"TODAY'S PICK":'WINNING RESULT';
+  // 기록물 일련번호: 날짜 기반 자동 생성
+  const dt=document.getElementById('inDate').value.replace(/[^0-9]/g,'').padStart(4,'0');
+  document.getElementById('cSerial').textContent='YT-'+new Date().getFullYear()+'-'+dt;
+  document.getElementById('cTitle').textContent=document.getElementById('inTitle').value;
+
+  const ch=document.getElementById('cHorses');
+  ch.innerHTML='';
+  const hs=horses.filter(h=>h.n||h.name);
+  ch.style.display=hs.length?'flex':'none';
+  hs.forEach(h=>{
+    const c=NUM_COLORS[parseInt(h.n)]||['#444','#fff'];
+    const d=document.createElement('div');d.className='horse';
+    d.innerHTML=`<span class="hnum" style="background:${c[0]};color:${c[1]}">${esc(h.n)}</span>
+      <span class="hname">${esc(h.name)}</span>`;
+    ch.appendChild(d);
+  });
+
+  const co=document.getElementById('cOdds');
+  co.innerHTML='';
+  const os=odds.filter(o=>o.l||o.v);
+  co.style.display=os.length?'flex':'none';
+  os.forEach(o=>{
+    const d=document.createElement('div');d.className='odd';
+    // 개별 색상 지정 시 해당 색 기반 그라디언트로
+    const st=o.c?` style="background:linear-gradient(180deg,${shade(o.c,.55)} 15%,${o.c} 60%,${shade(o.c,-.35)} 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 3px 14px ${o.c}44);"`:'';
+    d.innerHTML=`<span class="olabel">${esc(o.l)}</span>
+      <span class="oval"${st}>${esc(o.v)}<small>배</small></span>`;
+    co.appendChild(d);
+  });
+
+  const cm=document.getElementById('cComment');
+  const raw=document.getElementById('inComment').value.trim();
+  cm.style.display=raw?'block':'none';
+  cm.innerHTML=esc(raw).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+
+  const bd=document.getElementById('cBadge');
+  const bt=document.getElementById('inBadge').value.trim();
+  bd.style.display=bt?'flex':'none';
+  bd.textContent=bt;
+}
+function download(){
+  const card=document.getElementById('card');
+  const fname='윤택_'+document.getElementById('inTitle').value.replace(/\s+/g,'')+'.png';
+  // html-to-image: 브라우저가 직접 렌더링해서 그라디언트 글자도 화면 그대로 나옴
+  htmlToImage.toPng(card,{pixelRatio:2,backgroundColor:shade(bg,-.35),skipFonts:true})
+    .then(dataUrl=>{
+      const a=document.createElement('a');
+      a.download=fname; a.href=dataUrl; a.click();
+    })
+    .catch(()=>{
+      // 실패 시 예비 엔진으로 대체
+      html2canvas(card,{scale:2,useCORS:true,backgroundColor:shade(bg,-.35)}).then(cv=>{
+        const a=document.createElement('a');
+        a.download=fname; a.href=cv.toDataURL('image/png'); a.click();
+      });
+    });
+}
+buildForm();render();
+</script>
+</body>
+</html>

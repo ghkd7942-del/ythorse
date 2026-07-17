@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>윤택경마 게시글 생성기</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+  :root{--bg:#0d1117;--panel:#161c26;--line:#2a3342;--gold:#e6c15c;--text:#eef2f5;--sub:#8b97a5;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"Pretendard",sans-serif;background:var(--bg);color:var(--text);}
+  .app{display:flex;gap:20px;max-width:1500px;margin:0 auto;padding:24px 20px 60px;align-items:flex-start;}
+  .col-form{width:430px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;}
+  .col-prev{flex:1;min-width:400px;position:sticky;top:20px;}
+  h1{font-size:20px;font-weight:800;margin-bottom:4px;}
+  h1 span{color:var(--gold);}
+  .hint{color:var(--sub);font-size:12.5px;margin-bottom:8px;line-height:1.6;}
+
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .box h3{font-size:12px;font-weight:800;color:var(--sub);letter-spacing:2px;margin-bottom:8px;}
+  .segs{display:flex;gap:6px;}
+  .segs button{flex:1;padding:9px 4px;border-radius:8px;border:1px solid var(--line);background:#0d1420;
+    color:var(--sub);font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;}
+  #tFri.on{background:linear-gradient(135deg,#f2d98a,#cfa63e);color:#2b2108;border-color:transparent;}
+  #tSat.on{background:linear-gradient(135deg,#8ec5f2,#3d84cf);color:#fff;border-color:transparent;}
+  #tSun.on{background:linear-gradient(135deg,#f2938a,#cf483d);color:#fff;border-color:transparent;}
+  .swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .sw{width:30px;height:30px;border-radius:7px;border:2px solid var(--line);cursor:pointer;padding:0;}
+  .sw.on{border-color:var(--gold);box-shadow:0 0 0 2px rgba(230,193,92,.35);}
+  input[type=color]{width:30px;height:30px;border:2px solid var(--line);border-radius:7px;
+    background:none;cursor:pointer;padding:1px;}
+  .colrow{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);margin-top:6px;}
+  .preset-row{display:flex;gap:6px;margin-bottom:8px;}
+  .preset-row input{flex:1;background:#0d1420;border:1px solid var(--line);border-radius:7px;
+    color:var(--text);padding:8px 10px;font-size:13px;font-family:inherit;}
+  .preset-row button{padding:8px 16px;border-radius:7px;border:none;background:linear-gradient(135deg,#f2d98a,#cfa63e);
+    color:#2b2108;font-weight:800;cursor:pointer;font-family:inherit;font-size:13px;}
+  .preset-item{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.05);}
+  .preset-item:last-child{border-bottom:none;}
+  .preset-item .pname{flex:1;font-size:14px;font-weight:700;}
+  .preset-item .pdate{font-size:11px;color:var(--sub);}
+  .preset-item button{border:1px solid var(--line);background:none;border-radius:6px;
+    padding:5px 12px;font-size:12px;color:var(--text);cursor:pointer;font-family:inherit;}
+  .preset-item button:hover{border-color:var(--gold);color:var(--gold);}
+  .preset-item button.pdel:hover{border-color:#ff8f7d;color:#ff8f7d;}
+  .preset-empty{font-size:12.5px;color:var(--sub);}
+
+  /* 블록 편집 카드 */
+  .blk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;}
+  .blk-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .handle{cursor:grab;color:var(--sub);font-size:16px;user-select:none;padding:0 2px;}
+  .handle:hover{color:var(--gold);}
+  .blk.dragging{opacity:.45;}
+  .blk.over-top{box-shadow:0 -3px 0 0 var(--gold);}
+  .blk.over-bot{box-shadow:0 3px 0 0 var(--gold);}
+  .blk-type{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:1px;flex:1;}
+  .blk-btn{background:none;border:1px solid var(--line);color:var(--sub);border-radius:6px;
+    width:26px;height:26px;cursor:pointer;font-size:12px;line-height:1;}
+  .blk-btn:hover{color:var(--gold);border-color:var(--gold);}
+  .blk-btn.x:hover{color:#ff8f7d;border-color:#ff8f7d;}
+  .blk input[type=text]{width:100%;background:#0d1420;border:1px solid var(--line);border-radius:7px;
+    color:var(--text);padding:8px 10px;font-size:14px;font-family:inherit;margin-bottom:6px;}
+  .blk textarea{width:100%;background:#0d1420;border:1px solid var(--line);border-radius:7px;
+    color:var(--text);padding:8px 10px;font-size:14px;font-family:inherit;resize:vertical;min-height:70px;line-height:1.6;}
+  .blk input:focus,.blk textarea:focus{outline:none;border-color:var(--gold);}
+  .blk select{background:#0d1420;border:1px solid var(--line);border-radius:7px;color:var(--text);
+    padding:8px 10px;font-size:14px;font-family:inherit;margin-bottom:6px;cursor:pointer;}
+  .blk select:focus{outline:none;border-color:var(--gold);}
+  .racesel{display:flex;gap:6px;}
+  .racesel select{flex:1;}
+  .daterow{display:flex;gap:6px;}
+  .daterow input[type=text]{flex:1;}
+  .blk input[type=date]{width:150px;flex-shrink:0;background:#0d1420;border:1px solid var(--line);
+    border-radius:7px;color:var(--text);padding:8px 10px;font-size:14px;font-family:inherit;
+    margin-bottom:6px;cursor:pointer;color-scheme:dark;}
+  .blk input[type=date]:focus{outline:none;border-color:var(--gold);}
+  .imgpick{display:flex;gap:6px;margin-bottom:6px;}
+  .imgpick label{flex:1;display:block;text-align:center;padding:9px;border:1px dashed var(--line);
+    border-radius:7px;color:var(--sub);font-size:13px;font-weight:700;cursor:pointer;}
+  .imgpick label:hover{color:var(--gold);border-color:var(--gold);}
+  .imgpick input[type=file]{display:none;}
+  .imgpick .clear{padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:none;
+    color:var(--sub);font-size:13px;cursor:pointer;font-family:inherit;}
+  .imgpick .clear:hover{color:#ff8f7d;border-color:#ff8f7d;}
+  .imgthumb{width:100%;border-radius:8px;margin-bottom:6px;border:1px solid var(--line);}
+
+  .adders{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .adders button{padding:9px 4px;border-radius:8px;border:1px dashed var(--line);background:none;
+    color:var(--sub);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .adders button:hover{color:var(--gold);border-color:var(--gold);}
+
+  .actions{display:flex;gap:8px;}
+  .actions button{flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:800;
+    font-family:inherit;cursor:pointer;}
+  #btnCopy{background:linear-gradient(135deg,#f2d98a,#cfa63e);color:#2b2108;}
+  #btnCode{background:#2c3a4f;color:#fff;}
+  .codebox{display:none;}
+  .codebox textarea{width:100%;height:180px;background:#0d1420;border:1px solid var(--line);
+    border-radius:8px;color:#9fd8c3;font-size:11px;font-family:monospace;padding:10px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2ee6b8;color:#06281f;
+    font-weight:800;padding:12px 26px;border-radius:30px;font-size:14px;display:none;z-index:99;}
+
+  /* 미리보기 프레임 (게시판 흰배경 시뮬레이션) */
+  .prev-frame{background:#fff;border-radius:12px;padding:24px 16px;overflow:auto;max-height:calc(100vh - 60px);}
+  .prev-label{font-size:12px;color:var(--sub);letter-spacing:2px;margin-bottom:8px;font-weight:800;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="col-form">
+    <h1>윤택경마 <span>게시글 생성기</span></h1>
+    <p class="hint">블록을 조립해 게시글을 만들고 → [HTML 복사] → 검빛 에디터의 HTML 모드에 붙여넣으면 오른쪽 미리보기 그대로 게시판에 올라갑니다. 이미지 블록에는 적중카드 PNG를 게시판에 업로드한 뒤 주소를 넣거나, 비워두면 자리 표시가 생깁니다.</p>
+
+    <div class="box">
+      <h3>경마일 선택 (누르면 이번 주 날짜·제목·색상 자동 설정)</h3>
+      <div class="segs">
+        <button id="tFri" onclick="pickDay('fri')">금</button>
+        <button id="tSat" onclick="pickDay('sat')">토</button>
+        <button id="tSun" class="on" onclick="pickDay('sun')">일</button>
+      </div>
+      <h3 style="margin-top:14px;">카드 색상 (어두운 박스 배경)</h3>
+      <div class="swatches">
+        <button class="sw on" style="background:#141b29" onclick="setCardBg('#141b29',this)" title="남색 (기본)"></button>
+        <button class="sw" style="background:#101012" onclick="setCardBg('#101012',this)" title="블랙"></button>
+        <button class="sw" style="background:#10201a" onclick="setCardBg('#10201a',this)" title="딥그린"></button>
+        <button class="sw" style="background:#241016" onclick="setCardBg('#241016',this)" title="버건디"></button>
+        <button class="sw" style="background:#171029" onclick="setCardBg('#171029',this)" title="딥퍼플"></button>
+        <input type="color" id="cardBgPick" value="#141b29" oninput="setCardBg(this.value,null)" title="직접 선택">
+      </div>
+      <h3 style="margin-top:14px;">글자 크기</h3>
+      <div class="segs">
+        <button id="fs1" onclick="setFs(1)">보통</button>
+        <button id="fs2" class="on" onclick="setFs(1.2)" style="background:#2c3a4f;color:#fff;">크게</button>
+        <button id="fs3" onclick="setFs(1.35)">아주 크게</button>
+      </div>
+      <h3 style="margin-top:14px;">글씨 색상</h3>
+      <div class="colrow">
+        <input type="color" id="cardColPick" value="#ffffff" oninput="cardCol=this.value;render()"> 카드 안 글씨
+        <input type="color" id="bodyColPick" value="#333333" oninput="bodyCol=this.value;render()" style="margin-left:12px;"> 본문 글씨
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>이미지 자동 업로드 연동 <span id="nflStatus" style="color:#ff8f7d;">미연동</span></h3>
+      <p style="font-size:12px;color:var(--sub);line-height:1.7;margin-bottom:8px;">
+        최초 1회만 설정하면 이미지를 올리는 순간 자동으로 인터넷에 올라갑니다.<br>
+        ① <a href="https://github.com/settings/tokens/new?scopes=repo&description=ythorse-editor" target="_blank" style="color:#2ee6b8;">여기(GitHub)</a>에서
+        만료(Expiration)를 No expiration으로 → 맨 아래 [Generate token] 클릭<br>
+        ② 나온 긴 코드를 아래에 붙여넣고 저장
+      </p>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="nflToken" placeholder="연동 키 붙여넣기" style="flex:1;background:#0d1420;border:1px solid var(--line);border-radius:7px;color:var(--text);padding:8px 10px;font-size:13px;font-family:inherit;">
+        <button onclick="saveToken()" style="padding:8px 16px;border-radius:7px;border:none;background:#2c3a4f;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;">저장</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>내 템플릿 (세팅 저장·불러오기)</h3>
+      <div class="preset-row">
+        <input type="text" id="presetName" placeholder="템플릿 이름 (예: 일요 기본형, 골드 축하버전)">
+        <button onclick="savePreset()">현재 세팅 저장</button>
+      </div>
+      <div id="presetList"></div>
+    </div>
+
+    <div id="blocks"></div>
+
+    <div class="box">
+      <h3>블록 추가</h3>
+      <div class="adders">
+        <button onclick="addBlock('header')">+ 헤더 배너</button>
+        <button onclick="addBlock('section')">+ 섹션 제목</button>
+        <button onclick="addBlock('image')">+ 이미지</button>
+        <button onclick="addBlock('text')">+ 문단</button>
+        <button onclick="addBlock('race')">+ 경주 예상</button>
+        <button onclick="addBlock('highlight')">+ 하이라이트</button>
+        <button onclick="addBlock('notice')">+ 신청안내</button>
+        <button onclick="addBlock('youtube')">+ 유튜브</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnCopy" onclick="copyHTML()">HTML 복사</button>
+      <button id="btnCode" onclick="toggleCode()">코드 보기</button>
+    </div>
+    <div class="codebox box" id="codebox">
+      <h3>HTML 코드 (전체 선택 후 복사 가능)</h3>
+      <textarea id="codeArea" readonly onclick="this.select()"></textarea>
+    </div>
+  </div>
+
+  <div class="col-prev">
+    <div class="prev-label">미리보기 — 게시판에 올라갈 실제 모습</div>
+    <div class="prev-frame"><div id="preview"></div></div>
+  </div>
+</div>
+<div class="toast" id="toast">복사 완료! 검빛 에디터 HTML 모드에 붙여넣으세요</div>
+
+<script>
+const THEMES={
+  fri:{a:'#c9a133',a2:'#8a6d1c',name:'골드'},
+  sat:{a:'#3d84cf',a2:'#1f5fa8',name:'블루'},
+  sun:{a:'#cf483d',a2:'#a8291f',name:'레드'}
+};
+let theme='sun', cardBg='#141b29', cardCol='#ffffff', bodyCol='#333333', fontScale=1.2;
+function setFs(v){
+  fontScale=v;
+  [['fs1',1],['fs2',1.2],['fs3',1.35]].forEach(([id,s])=>{
+    const b=document.getElementById(id);
+    const on=s===v;
+    b.className=on?'on':'';
+    b.style.background=on?'#2c3a4f':'';
+    b.style.color=on?'#fff':'';
+  });
+  render();
+}
+function shade(hex,p){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.min(255,Math.max(0,Math.round(r+(p>0?(255-r)*p:r*p))));
+  g=Math.min(255,Math.max(0,Math.round(g+(p>0?(255-g)*p:g*p))));
+  b=Math.min(255,Math.max(0,Math.round(b+(p>0?(255-b)*p:b*p))));
+  return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+function setCardBg(c,btn){
+  cardBg=c;
+  document.querySelectorAll('.sw').forEach(s=>s.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  document.getElementById('cardBgPick').value=c;
+  render();
+}
+// 게시판은 웹폰트를 못 불러오므로 시스템 고딕으로 통일 (미리보기=게시판 동일)
+const FONT="font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',AppleGothic,sans-serif;";
+
+let blocks=[
+  {t:'header',title:'7.5 일요 아나짜리 총정리',sub:'서울 · 부산 · 제주 | 윤택의 경마예상',date:'7/5 (일)'},
+  {t:'section',text:'어제의 결과'},
+  {t:'image',url:'',cap:'제주 3경주 - 쌍 42.1배 · 삼쌍 536.4배 적중'},
+  {t:'text',text:'9전설마루를 대가리로 잡고 **W아나짜리 3연대기**까지, 쌍은 42배 삼쌍은 536배 승부 적중.'},
+  {t:'section',text:'오늘의 흐름'},
+  {t:'text',text:'일요경마도 토요일처럼 인기마들이 서울은 중심을 잡아주고, 부산 쪽은 어디 하나 확신할 수 없는 극도의 혼전 편성입니다. **다적중과 고배당** 양질의 적중을 뽑아내겠습니다.'},
+  {t:'highlight',main:'오늘의 메인승부 — 7경주',sub:'동틀때 메인 · 얄짤없이 결과물로 메이드'},
+  {t:'section',text:'경주별 예상'},
+  {t:'race',venue:'서울',num:1,head:'5원더풀튠업 놓고 끝낼판',body:'직전 선입권 뚝심을 발휘한 5원더풀튠업, 안드레 기수가 될만한 말에 올라갔기에 적극적인 말몰이가 기대됩니다. 편성상 대가리 맞죠.'},
+  {t:'race',venue:'부산',num:1,head:'감 되찾은 3로지스트퀸 노림수',body:'3로지스트퀸이 오늘은 선행을 쏠 수 있을 조건. 조교 내용과 상태도 부쩍 올라온 최상의 모습입니다.'},
+  {t:'notice'}
+];
+
+function setTheme(t){
+  theme=t;
+  ['tFri','tSat','tSun'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById(t==='fri'?'tFri':t==='sat'?'tSat':'tSun').classList.add('on');
+  buildForm(); // 요일에 따라 경주 블록의 경마장 선택지 갱신
+  render();
+}
+function addBlock(t){
+  const d={header:{t:'header',title:'제목을 입력하세요',sub:'',date:''},
+    section:{t:'section',text:'섹션 제목'},
+    image:{t:'image',url:'',cap:''},
+    text:{t:'text',text:'내용을 입력하세요. **별표 두개**로 강조.'},
+    race:{t:'race',venue:'',num:1,head:'헤드라인',body:'예상 내용'},
+    highlight:{t:'highlight',main:'삼쌍 536.4배 적중',sub:''},
+    notice:{t:'notice'},
+    youtube:{t:'youtube',url:'',title:''}}[t];
+  blocks.push(JSON.parse(JSON.stringify(d)));
+  buildForm();render();
+}
+function mv(i,dir){
+  const j=i+dir;
+  if(j<0||j>=blocks.length)return;
+  [blocks[i],blocks[j]]=[blocks[j],blocks[i]];
+  buildForm();render();
+}
+function rm(i){blocks.splice(i,1);buildForm();render();}
+function dup(i){
+  const b=blocks[i];
+  let n=JSON.parse(JSON.stringify(b));
+  if(b.t==='race'){n.num=Math.min(13,(b.num||1)+1);n.head='';n.body='';}
+  if(b.t==='image'){n.url='';n.cap='';}
+  if(b.t==='youtube'){n.url='';n.title='';}
+  blocks.splice(i+1,0,n);
+  buildForm();render();
+}
+function upd(i,k,v){blocks[i][k]=v;render();}
+
+const TYPE_NAMES={header:'헤더 배너',section:'섹션 제목',image:'이미지',text:'문단',race:'경주 예상',highlight:'하이라이트',notice:'신청안내',youtube:'유튜브'};
+
+// 요일별 개최 경마장: 금=부산(+제주), 토=서울(+제주), 일=서울·부산
+const VENUES={fri:['부산','제주'],sat:['서울','제주'],sun:['서울','부산']};
+function raceLabel(b){
+  if(b.venue) return (b.venue==='서울'?'':b.venue+' ')+b.num+'경주';
+  return b.name||'';
+}
+function ytid(url){
+  const m=(url||'').match(/(?:youtu\.be\/|watch\?v=|shorts\/|embed\/|live\/)([\w-]{11})/);
+  return m?m[1]:null;
+}
+
+function buildForm(){
+  const wrap=document.getElementById('blocks');
+  wrap.innerHTML='';
+  blocks.forEach((b,i)=>{
+    const div=document.createElement('div');
+    div.className='blk';
+    let fields='';
+    if(b.t==='header') fields=
+      `<input type="text" placeholder="날짜 (위 경마일 버튼으로 자동 입력)" value="${b.date||''}" oninput="upd(${i},'date',this.value)">
+       <input type="text" placeholder="메인 제목" value="${b.title||''}" oninput="upd(${i},'title',this.value)">
+       <input type="text" placeholder="서브 문구" value="${b.sub||''}" oninput="upd(${i},'sub',this.value)">`;
+    if(b.t==='section') fields=
+      `<input type="text" placeholder="섹션 제목" value="${b.text||''}" oninput="upd(${i},'text',this.value)">`;
+    if(b.t==='image'){
+      // 구버전 데이터 정리: 내장(base64) 주소는 검빛에서 차단되므로 비움
+      if((b.url||'').startsWith('data:')){b.preview=b.url;b.url='';}
+      fields=
+      (b.preview?`<img class="imgthumb" src="${b.preview}">`:'')+
+      `<div class="imgpick">
+         <label>📁 이미지 파일 올리기 (적중카드 PNG 등)<input type="file" accept="image/*" onchange="pickImg(${i},this)"></label>
+         ${(b.url||b.preview)?`<button class="clear" onclick="blocks[${i}].url='';blocks[${i}].preview='';blocks[${i}].fname='';buildForm();render()">제거</button>`:''}
+       </div>`+
+      (b.upState==='업로드 중...'?`<p style="font-size:12px;color:#e6c15c;margin-bottom:6px;">⏳ 인터넷에 업로드 중...</p>`:'')+
+      (b.upState==='완료'?`<p style="font-size:12px;color:#2ee6b8;margin-bottom:6px;">✔ 업로드 완료! 이대로 HTML 복사하면 게시판에 이미지가 나옵니다</p>`:'')+
+      ((b.upState||'').startsWith('실패')?`<p style="font-size:12px;color:#ff8f7d;margin-bottom:6px;">✕ ${b.upState} - 연동 키를 확인해 주세요</p>`:'')+
+      (b.upState==='미연동'?`<p style="font-size:12px;color:#ff8f7d;margin-bottom:6px;">⚠ 자동 업로드가 연동되지 않아 이미지가 자리표시로 나갑니다. 맨 위 [이미지 자동 업로드 연동]을 설정해 주세요.</p>`:'')+
+      `<input type="text" placeholder="또는 이미지 주소 직접 입력 (비우면 자리표시)" value="${b.url||''}" oninput="upd(${i},'url',this.value)">
+       <input type="text" placeholder="캡션 (선택)" value="${b.cap||''}" oninput="upd(${i},'cap',this.value)">`;
+    }
+    if(b.t==='text') fields=
+      `<textarea placeholder="내용 (**강조** 가능)" oninput="upd(${i},'text',this.value)">${b.text||''}</textarea>`;
+    if(b.t==='race'){
+      const vops=VENUES[theme];
+      // 기존 수기 입력 블록 호환 + 요일에 맞는 경마장으로 보정
+      if(!b.venue||!vops.includes(b.venue)){
+        if((b.name||'').includes('부산')&&vops.includes('부산'))b.venue='부산';
+        else if((b.name||'').includes('제주')&&vops.includes('제주'))b.venue='제주';
+        else b.venue=vops[0];
+      }
+      if(!b.num)b.num=parseInt((b.name||'').replace(/[^0-9]/g,''))||1;
+      let nums='';
+      for(let n=1;n<=13;n++)nums+=`<option value="${n}"${b.num==n?' selected':''}>${n}경주</option>`;
+      fields=
+      `<div class="racesel">
+         <select onchange="upd(${i},'venue',this.value)">
+           ${vops.map(v=>`<option value="${v}"${b.venue===v?' selected':''}>${v}</option>`).join('')}
+         </select>
+         <select onchange="upd(${i},'num',parseInt(this.value))">${nums}</select>
+       </div>
+       <input type="text" placeholder="헤드라인" value="${b.head||''}" oninput="upd(${i},'head',this.value)">
+       <textarea placeholder="예상 내용" oninput="upd(${i},'body',this.value)">${b.body||''}</textarea>`;
+    }
+    if(b.t==='highlight') fields=
+      `<input type="text" placeholder="큰 문구" value="${b.main||''}" oninput="upd(${i},'main',this.value)">
+       <input type="text" placeholder="작은 문구 (선택)" value="${b.sub||''}" oninput="upd(${i},'sub',this.value)">`;
+    if(b.t==='notice') fields=
+      `<p style="font-size:12px;color:var(--sub);">계좌·요금·연락처가 자동으로 들어갑니다.</p>`;
+    if(b.t==='youtube') fields=
+      `<input type="text" placeholder="유튜브 주소 또는 퍼가기 소스코드 붙여넣기" value="${esc(b.url||'')}" oninput="upd(${i},'url',this.value)">
+       <input type="text" placeholder="영상 제목 (선택)" value="${b.title||''}" oninput="upd(${i},'title',this.value)">
+       <div class="segs" style="margin-bottom:6px;">
+         <button class="${(b.play||'embed')==='embed'?'on':''}" style="${(b.play||'embed')==='embed'?'background:#2c3a4f;color:#fff;':''}" onclick="upd(${i},'play','embed');buildForm();render()">글에서 바로 재생</button>
+         <button class="${b.play==='link'?'on':''}" style="${b.play==='link'?'background:#2c3a4f;color:#fff;':''}" onclick="upd(${i},'play','link');buildForm();render()">썸네일 클릭 이동</button>
+       </div>
+       ${ytid(b.url)?'':'<p style="font-size:12px;color:#ff8f7d;">'+(b.url?'주소를 인식하지 못했습니다':'주소나 퍼가기 코드를 넣으면 영상이 생깁니다')+'</p>'}`;
+    div.innerHTML=
+      `<div class="blk-head">
+        <span class="handle" title="끌어서 위치 이동">⠿</span>
+        <span class="blk-type">${TYPE_NAMES[b.t]}</span>
+        <button class="blk-btn" onclick="dup(${i})" title="바로 아래에 같은 블록 추가" style="font-weight:900;">＋</button>
+        <button class="blk-btn" onclick="mv(${i},-1)">▲</button>
+        <button class="blk-btn" onclick="mv(${i},1)">▼</button>
+        <button class="blk-btn x" onclick="rm(${i})">✕</button>
+      </div>${fields}`;
+    div.dataset.idx=i;
+    // 핸들을 잡았을 때만 드래그 가능
+    const handle=div.querySelector('.handle');
+    handle.addEventListener('mousedown',()=>div.draggable=true);
+    handle.addEventListener('mouseup',()=>div.draggable=false);
+    div.addEventListener('dragstart',e=>{
+      dragIdx=i;div.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    div.addEventListener('dragend',()=>{
+      div.draggable=false;div.classList.remove('dragging');
+      document.querySelectorAll('.blk').forEach(x=>x.classList.remove('over-top','over-bot'));
+    });
+    div.addEventListener('dragover',e=>{
+      e.preventDefault();
+      const r=div.getBoundingClientRect();
+      const top=(e.clientY-r.top)<r.height/2;
+      div.classList.toggle('over-top',top);
+      div.classList.toggle('over-bot',!top);
+    });
+    div.addEventListener('dragleave',()=>div.classList.remove('over-top','over-bot'));
+    div.addEventListener('drop',e=>{
+      e.preventDefault();
+      const r=div.getBoundingClientRect();
+      const top=(e.clientY-r.top)<r.height/2;
+      let to=parseInt(div.dataset.idx)+(top?0:1);
+      if(dragIdx===null)return;
+      if(to>dragIdx)to--;
+      if(to!==dragIdx){
+        const[m]=blocks.splice(dragIdx,1);
+        blocks.splice(to,0,m);
+      }
+      dragIdx=null;buildForm();render();
+    });
+    wrap.appendChild(div);
+  });
+}
+let dragIdx=null;
+
+// 이번 주(오늘 포함 다가오는) 해당 요일 날짜
+function upcoming(dow){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const d=new Date(t);
+  d.setDate(t.getDate()+((dow-t.getDay()+7)%7));
+  return d;
+}
+// 날짜를 모든 헤더 블록(날짜+제목)에 반영하고 테마 전환
+function applyDate(d,k){
+  const yo=['일','월','화','수','목','금','토'][d.getDay()];
+  const M=d.getMonth()+1, D=d.getDate();
+  const re=/^\s*\d{1,2}[./\/]\d{1,2}\s*(?:\((?:일|월|화|수|목|금|토)\)|(?:일|월|화|수|목|금|토)요)?/;
+  blocks.forEach(b=>{
+    if(b.t==='header'){
+      b.date=`${M}/${D} (${yo})`;
+      if(re.test(b.title||'')) b.title=(b.title||'').replace(re,`${M}.${D} ${yo}요`);
+    }
+  });
+  setTheme(k||theme);
+}
+// 금/토/일 버튼: 이번 주 날짜로 자동 설정
+function pickDay(k){
+  applyDate(upcoming({fri:5,sat:6,sun:0}[k]), k);
+}
+// 달력 직접 선택 (예외적인 날짜용)
+function pickDate(i,val){
+  if(!val)return;
+  const d=new Date(val+'T00:00:00');
+  const map={5:'fri',6:'sat',0:'sun'};
+  applyDate(d, map[d.getDay()]);
+}
+// 버튼에 이번 주 날짜 표시
+function labelDays(){
+  [['tFri',5,'금'],['tSat',6,'토'],['tSun',0,'일']].forEach(([id,dow,nm])=>{
+    const d=upcoming(dow);
+    document.getElementById(id).textContent=`${nm} · ${d.getMonth()+1}/${d.getDate()}`;
+  });
+}
+// ─── GitHub 자동 업로드 (무료 · 용량 걱정 없음) ───
+const GH_OWNER='ghkd7942-del', GH_REPO='ythorse';
+function getToken(){try{return localStorage.getItem('yt_gh_token')||'';}catch(e){return '';}}
+function saveToken(){
+  const v=document.getElementById('nflToken').value.trim();
+  if(!v){alert('연동 키를 붙여넣어 주세요');return;}
+  try{localStorage.setItem('yt_gh_token',v);}catch(e){}
+  updateNflStatus();
+  alert('저장되었습니다! 이제 이미지를 올리면 자동으로 업로드됩니다.');
+}
+function updateNflStatus(){
+  const s=document.getElementById('nflStatus');
+  if(getToken()){s.textContent='연동됨 ✔';s.style.color='#2ee6b8';
+    document.getElementById('nflToken').value='●●●●●●●● (저장됨)';}
+  else{s.textContent='미연동';s.style.color='#ff8f7d';}
+}
+async function nflUpload(bytes,fn){
+  // GitHub 저장소에 파일 커밋 (Contents API)
+  const u8=new Uint8Array(bytes);
+  let bin='';
+  for(let i=0;i<u8.length;i+=8192) bin+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));
+  const b64=btoa(bin);
+  const r=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/cards/${encodeURIComponent(fn)}`,
+    {method:'PUT',
+     headers:{Authorization:'Bearer '+getToken(),'Content-Type':'application/json',Accept:'application/vnd.github+json'},
+     body:JSON.stringify({message:'card upload: '+fn,content:b64})});
+  if(r.status===401||r.status===403)throw new Error('연동 키 확인 실패 ('+r.status+')');
+  if(!r.ok)throw new Error('업로드 실패 ('+r.status+')');
+  // raw 주소는 커밋 즉시 사용 가능
+  return `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/cards/${fn}`;
+}
+
+// 이미지 선택 → 자동 리사이즈 → 자동 업로드(연동 시) 또는 안내(미연동 시)
+function pickImg(i,input){
+  const f=input.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=720;
+      const w=Math.min(img.width,MAX), h=Math.round(img.height*w/img.width);
+      const cv=document.createElement('canvas');
+      cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      const data=cv.toDataURL('image/jpeg',0.88);
+      const d=new Date();
+      const fn=`card-${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${Date.now().toString().slice(-4)}.jpg`;
+      blocks[i].preview=data;
+      blocks[i].fname=fn;
+      if(getToken()){
+        blocks[i].upState='업로드 중...';
+        buildForm();render();
+        cv.toBlob(async blob=>{
+          try{
+            const bytes=await blob.arrayBuffer();
+            const url=await nflUpload(bytes,fn);
+            blocks[i].url=url;
+            blocks[i].upState='완료';
+          }catch(err){
+            blocks[i].upState='실패: '+err.message;
+            blocks[i].url='';
+          }
+          buildForm();render();
+        },'image/jpeg',0.88);
+      }else{
+        blocks[i].upState='미연동';
+        blocks[i].url='';
+        buildForm();render();
+      }
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(f);
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(s,a){return esc(s).replace(/\*\*(.+?)\*\*/g,`<b style="color:${a};">$1</b>`).replace(/\n/g,'<br>');}
+
+function genHTML(forExport){
+  const T=THEMES[theme], a=T.a, a2=T.a2;
+  const cb=cardBg, cb2=shade(cardBg,-.45);
+  // 구형 에디터 호환: 그라디언트가 지워져도 단색 배경이 남도록 이중 지정
+  const grad=`background-color:${cb};background-image:linear-gradient(160deg,${cb},${cb2})`;
+  // 검빛 에디터가 순수 흰색(#ffffff/#fff/white) 스타일을 삭제하므로 눈에 안 띄게 치환
+  const safe=c=>{const x=(c||'').toLowerCase();return (x==='#ffffff'||x==='#fff'||x==='white')?'#fdfdfd':c;};
+  const cc=safe(cardCol), ccSub=safe(shade(cardCol,-.28)), bc=safe(bodyCol);
+  let h=`<style>@keyframes ytrv{from{opacity:0;transform:translateY(44px)}to{opacity:1;transform:translateY(0)}}.yt-rv{animation:ytrv .8s cubic-bezier(.22,.9,.3,1) both;animation-timeline:view();animation-range:entry 0% entry 55%;}</style>`+
+    `<div style="max-width:720px;margin:0 auto;${FONT}">`;
+  blocks.forEach(b=>{
+    if(b.t==='header'){
+      h+=`<div class="yt-rv" style="${grad};border:1px solid ${a};border-radius:14px;padding:34px 20px;text-align:center;margin:0 0 18px;">`;
+      if(b.date) h+=`<div style="font-size:14px;letter-spacing:3px;color:${ccSub};margin-bottom:10px;">${esc(b.date)}</div>`;
+      h+=`<div style="font-size:32px;font-weight:900;color:${a};line-height:1.3;">${fmt(b.title,cc)}</div>`;
+      if(b.sub) h+=`<div style="margin-top:10px;color:${cc};font-size:15px;">${fmt(b.sub,a)}</div>`;
+      h+=`<div style="margin-top:16px;font-size:13px;color:${ccSub};">윤택의 경마예상 · ARS 060.702.0101 · SMS 010.9423.9339</div></div>`;
+    }
+    if(b.t==='section'){
+      h+=`<div class="yt-rv" style="margin:26px 0 14px;padding:12px 18px;background:${cb};border-left:5px solid ${a};border-radius:8px;font-size:19px;font-weight:800;color:${cc};">${fmt(b.text,a)}</div>`;
+    }
+    if(b.t==='image'){
+      h+=`<div class="yt-rv" style="text-align:center;margin:14px 0;">`;
+      // 미리보기는 방금 올린 이미지로, 내보내기는 게시용 주소로
+      const isrc=forExport?b.url:(b.preview||b.url);
+      if(isrc) h+=`<img src="${esc(isrc)}" style="max-width:100%;border-radius:12px;" alt="">`;
+      if(!isrc) h+=`<div style="border:2px dashed #c9c9c9;border-radius:12px;padding:60px 20px;color:#999;font-size:15px;">▶ 여기에 적중카드 이미지를 넣으세요 ◀<br><span style="font-size:12px;">(검빛 에디터에서 이 자리에 이미지 업로드)</span></div>`;
+      if(b.cap) h+=`<div style="color:#777;font-size:14px;margin-top:8px;">${fmt(b.cap,a)}</div>`;
+      h+=`</div>`;
+    }
+    if(b.t==='text'){
+      h+=`<p class="yt-rv" style="font-size:16px;line-height:1.85;color:${bc};margin:14px 4px;">${fmt(b.text,a)}</p>`;
+    }
+    if(b.t==='race'){
+      h+=`<div class="yt-rv" style="border:1px solid #e3e3e3;border-radius:12px;margin:14px 0;overflow:hidden;">`+
+        `<div style="background:${cb};padding:12px 18px;">`+
+        `<span style="color:${a};font-weight:900;font-size:16px;">●● ${esc(raceLabel(b))} ●●</span>`+
+        `<span style="color:${cc};font-weight:700;font-size:16px;margin-left:12px;">${fmt(b.head,a)}</span></div>`+
+        `<div style="padding:16px 18px;font-size:15px;line-height:1.85;color:${bc};background:#fafafa;">${fmt(b.body,a2)}</div></div>`;
+    }
+    if(b.t==='highlight'){
+      h+=`<div class="yt-rv" style="${grad};border:1px solid ${a};border-radius:12px;padding:24px 20px;text-align:center;margin:18px 0;">`+
+        `<div style="font-size:26px;font-weight:900;color:${a};">${fmt(b.main,cc)}</div>`;
+      if(b.sub) h+=`<div style="margin-top:8px;color:${cc};font-size:15px;">${fmt(b.sub,a)}</div>`;
+      h+=`</div>`;
+    }
+    if(b.t==='youtube'){
+      const id=ytid(b.url);
+      if(id&&(b.play||'embed')==='embed'){
+        // 글에서 바로 재생 (iframe 퍼가기)
+        h+=`<div class="yt-rv" style="margin:16px 0;">`;
+        if(b.title) h+=`<div style="font-size:17px;font-weight:800;color:#333;margin-bottom:8px;"><span style="display:inline-block;background:#e53935;color:#fdfdfd;font-weight:900;font-size:12px;padding:3px 9px;border-radius:5px;vertical-align:1px;margin-right:8px;">▶ YouTube</span>${esc(b.title)}</div>`;
+        if(forExport){
+          h+=`<iframe src="https://www.youtube.com/embed/${id}" width="720" height="405" style="width:100%;height:405px;border:0;border-radius:14px;display:block;" frameborder="0" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        }else{
+          // 미리보기: 유튜브가 로컬 파일에서의 재생을 막으므로 썸네일로 대체 표시
+          h+=`<div style="position:relative;border-radius:14px;overflow:hidden;">`+
+            `<img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" style="width:100%;display:block;" alt="">`+
+            `<div style="position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);color:#2ee6b8;font-size:14px;font-weight:700;padding:9px 14px;text-align:center;">▶ 미리보기에서만 이렇게 보입니다 - 게시판에서는 여기서 바로 재생됩니다</div></div>`;
+        }
+        h+=`</div>`;
+      }else if(id){
+        const link=esc(b.url);
+        h+=`<div class="yt-rv" style="margin:16px 0;border:1px solid #e3e3e3;border-radius:14px;overflow:hidden;">`+
+          `<a href="${link}" target="_blank" style="display:block;text-decoration:none;">`+
+          `<img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" style="width:100%;display:block;" alt="유튜브 영상">`+
+          `<div style="background:${cb};padding:14px 18px;">`+
+          `<span style="display:inline-block;background:#e53935;color:#fff;font-weight:900;font-size:12px;padding:4px 10px;border-radius:5px;vertical-align:middle;">▶ YouTube</span>`+
+          `<span style="color:${cc};font-weight:700;font-size:16px;margin-left:10px;vertical-align:middle;">${esc(b.title)||'영상 보러가기'}</span>`+
+          `<span style="float:right;color:${a};font-weight:800;font-size:14px;margin-top:3px;">클릭 ▶</span>`+
+          `</div></a></div>`;
+      }else{
+        h+=`<div style="border:2px dashed #c9c9c9;border-radius:12px;padding:40px 20px;text-align:center;color:#999;font-size:15px;margin:14px 0;">▶ 유튜브 주소를 입력하면 영상 카드가 생깁니다</div>`;
+      }
+    }
+    if(b.t==='notice'){
+      h+=`<div class="yt-rv" style="${grad};border:2px solid ${a};border-radius:16px;padding:30px 24px;margin:24px 0 10px;text-align:center;">`+
+        // 타이틀
+        `<div style="font-size:26px;font-weight:900;color:${a};letter-spacing:1px;">윤택경마 문자서비스 신청</div>`+
+        `<div style="width:70px;height:3px;background:${a};margin:14px auto 20px;border-radius:2px;"></div>`+
+        // 계좌 강조 박스
+        `<div style="border:2px solid ${a};border-radius:14px;padding:18px 14px;margin:0 0 18px;">`+
+        `<span style="display:inline-block;background:${a};color:#0a0f18;font-weight:900;font-size:17px;padding:5px 16px;border-radius:8px;vertical-align:middle;">농협</span>`+
+        `<span style="font-size:27px;font-weight:900;color:${cc};letter-spacing:1px;margin-left:12px;vertical-align:middle;">302207-3271721</span>`+
+        `<div style="margin-top:8px;font-size:16px;color:${ccSub};">예금주 <b style="color:${cc};">박*름</b></div>`+
+        `</div>`+
+        // 요금 칩
+        `<div style="margin-bottom:18px;">`+
+        `<span style="display:inline-block;background:${a};color:#0a0f18;font-weight:900;font-size:19px;padding:13px 22px;border-radius:12px;margin:4px;">금토일 3일 20,000원</span>`+
+        `<span style="display:inline-block;border:2px solid ${ccSub};color:${cc};font-weight:800;font-size:19px;padding:11px 22px;border-radius:12px;margin:4px;">1일 10,000원</span>`+
+        `</div>`+
+        // 문의전화
+        `<div style="font-size:22px;font-weight:900;color:${cc};margin-bottom:18px;">문의 <span style="color:${a};">010-9423-9339</span></div>`+
+        // 안내문
+        `<div style="text-align:left;font-size:17px;color:${cc};line-height:1.9;border-top:1px solid ${ccSub};padding-top:16px;">`+
+        `입금 후 <b style="color:${a};">입금자 성명 + 신청요일</b>을 문자로 남겨주셔야 정상등록됩니다.<br>`+
+        `예시) <b style="color:${a};">홍길동, 금토일 3일</b><br>`+
+        `<b style="color:#ff9d8a;">※ 1경주 마감 10분 전 이후 신청은 등록이 늦어질 수 있습니다.</b></div>`+
+        // CTA 버튼
+        `<a href="https://ghkd7942-del.github.io/ythorse/" target="_blank" style="display:block;background:${a};color:#0a0f18;font-weight:900;font-size:21px;padding:18px 10px;border-radius:14px;text-decoration:none;margin-top:20px;letter-spacing:1px;">▶ 전체 안내페이지 바로가기 ◀</a>`+
+        `</div>`;
+    }
+  });
+  h+=`</div>`;
+  // 검빛(EUC-KR)에서 깨지는 특수문자 자동 치환
+  h=h.replace(/—/g,'-').replace(/–/g,'-').replace(/❮/g,'<').replace(/❯/g,'>').replace(/✦/g,'★');
+  // 글자 크기 일괄 확대 (연령대 높은 독자용)
+  if(fontScale!==1) h=h.replace(/font-size:(\d+(?:\.\d+)?)px/g,(m,n)=>'font-size:'+Math.round(n*fontScale)+'px');
+  // 게시판 CSS가 글씨체를 덮어쓰지 못하게 모든 요소에 글씨체 직접 지정 (버튼과 동일 서체로 통일)
+  h=h.replace(/style="/g,'style="'+FONT);
+  return h;
+}
+
+function render(){
+  document.getElementById('preview').innerHTML=genHTML(false);
+  if(document.getElementById('codebox').style.display==='block')
+    document.getElementById('codeArea').value=genHTML(true);
+  try{localStorage.setItem('yt_post',JSON.stringify({theme,blocks,cardBg,cardCol,bodyCol,fontScale}));}catch(e){}
+}
+function toggleCode(){
+  const cb=document.getElementById('codebox');
+  cb.style.display=cb.style.display==='block'?'none':'block';
+  document.getElementById('codeArea').value=genHTML(true);
+}
+function copyHTML(){
+  const code=genHTML(true);
+  const done=()=>{const t=document.getElementById('toast');t.style.display='block';setTimeout(()=>t.style.display='none',2500);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(()=>{fallbackCopy(code);done();});
+  }else{fallbackCopy(code);done();}
+}
+function fallbackCopy(code){
+  const ta=document.createElement('textarea');
+  ta.value=code;document.body.appendChild(ta);ta.select();
+  document.execCommand('copy');document.body.removeChild(ta);
+}
+// 저장된 작업 복원
+try{
+  const s=JSON.parse(localStorage.getItem('yt_post'));
+  if(s&&s.blocks&&s.blocks.length){
+    blocks=s.blocks;theme=s.theme||'sun';
+    cardBg=s.cardBg||'#141b29';cardCol=s.cardCol||'#ffffff';bodyCol=s.bodyCol||'#333333';
+    if(s.fontScale)setFs(s.fontScale);
+    document.getElementById('cardBgPick').value=cardBg;
+    document.getElementById('cardColPick').value=cardCol;
+    document.getElementById('bodyColPick').value=bodyCol;
+  }
+}catch(e){}
+// ─── 템플릿 저장/불러오기 ───
+function getPresets(){try{return JSON.parse(localStorage.getItem('yt_presets'))||{};}catch(e){return{};}}
+function setPresets(p){try{localStorage.setItem('yt_presets',JSON.stringify(p));}catch(e){alert('저장 공간이 부족합니다. 안 쓰는 템플릿을 삭제해 주세요.');}}
+function cleanBlocks(){
+  // 미리보기용 대용량 이미지 데이터는 제외하고 저장
+  return JSON.parse(JSON.stringify(blocks)).map(b=>{delete b.preview;return b;});
+}
+function savePreset(){
+  const name=document.getElementById('presetName').value.trim();
+  if(!name){alert('템플릿 이름을 입력해 주세요');return;}
+  const p=getPresets();
+  p[name]={theme,cardBg,cardCol,bodyCol,fontScale,blocks:cleanBlocks(),
+    savedAt:new Date().toLocaleDateString('ko-KR')};
+  setPresets(p);
+  document.getElementById('presetName').value='';
+  buildPresetList();
+  const t=document.getElementById('toast');
+  t.textContent='템플릿 "'+name+'" 저장 완료!';
+  t.style.display='block';setTimeout(()=>{t.style.display='none';t.textContent='복사 완료! 검빛 에디터 HTML 모드에 붙여넣으세요';},2000);
+}
+function loadPreset(name){
+  const p=getPresets()[name];
+  if(!p)return;
+  blocks=JSON.parse(JSON.stringify(p.blocks));
+  cardBg=p.cardBg||'#141b29';cardCol=p.cardCol||'#ffffff';bodyCol=p.bodyCol||'#333333';
+  document.getElementById('cardBgPick').value=cardBg;
+  document.getElementById('cardColPick').value=cardCol;
+  document.getElementById('bodyColPick').value=bodyCol;
+  if(p.fontScale)setFs(p.fontScale);
+  setTheme(p.theme||'sun');
+}
+function delPreset(name){
+  if(!confirm('템플릿 "'+name+'"을(를) 삭제할까요?'))return;
+  const p=getPresets();delete p[name];setPresets(p);buildPresetList();
+}
+function buildPresetList(){
+  const wrap=document.getElementById('presetList');
+  const p=getPresets(), names=Object.keys(p);
+  if(!names.length){wrap.innerHTML='<p class="preset-empty">저장된 템플릿이 없습니다. 세팅을 만들고 이름을 붙여 저장해 보세요.</p>';return;}
+  wrap.innerHTML='';
+  names.forEach(n=>{
+    const div=document.createElement('div');div.className='preset-item';
+    div.innerHTML=`<span class="pname">${n.replace(/</g,'&lt;')}</span>
+      <span class="pdate">${p[n].savedAt||''}</span>
+      <button onclick="loadPreset('${n.replace(/'/g,"\\'")}')">불러오기</button>
+      <button class="pdel" onclick="delPreset('${n.replace(/'/g,"\\'")}')">✕</button>`;
+    wrap.appendChild(div);
+  });
+}
+
+setTheme(theme);
+buildForm();render();
+updateNflStatus();
+labelDays();
+buildPresetList();
+</script>
+</body>
+</html>
